@@ -7,12 +7,17 @@ import asyncio
 
 Alf = Alpha("yashu-alpha", api_id = API_ID, api_hash = API_HASH, session_string = STRING_SESSION)
 
+Process = True
+
 @Alf.on_message(filters.command("backup", "$"))
 async def back(_, m):
+    global Process
     if not m.from_user.is_self:
         return
     if str(m.chat.id)[0] == "-":
         return await eor(_, m, "Only can backup private chats...")
+    if Process:
+        return await eor(_, m, f"<i>Process is already going on....</i>\n\n/stop <i>to terminate...</i>")
     await eor(_, m, "Backing up chat.....")
     ch = _.get_chat_history(m.chat.id)
     MSG_ID = []
@@ -24,6 +29,8 @@ async def back(_, m):
     a = 0
     n = len(MSG_ID)//50
     for id in MSG_ID:
+        if not Process:
+            return
         try:
             await _.forward_messages(LOG, m.chat.id, id)
             a += 1
@@ -41,6 +48,16 @@ async def back(_, m):
     await ok.delete()
     return await eor(_, m, "all msges backed up successfully...")
         
+
+@Alf.on_message(filters.command("stop", "$"))
+async def sp(_, m):
+    global Process
+    if not Process:
+        return await eor(_, m, f"<i>No backup process is active...</i>")
+    await eor(_, m, f"<i>Stopping ongoing process....</i>")
+    Process = False
+    await eor(_, m, f"<i>Backup stopped...</i>")
+
 
 if YA == "YashuAlpha":
     Alf.run()
